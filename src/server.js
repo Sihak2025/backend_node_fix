@@ -1,0 +1,55 @@
+/** @format */
+
+import express from 'express';
+import { config } from 'dotenv';
+import { connectDB, disconnectDB } from './config/db.js';
+import { router } from './routes/apiRoutes.js';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+
+config();
+await connectDB();
+
+const app = express();
+app.use(cookieParser());
+
+app.use(
+  cors({
+    origin: '*', 
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
+
+// Body parsing middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// API Route in server
+app.use('/api', router);
+
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'Backend service is running.',
+    apiBase: '/api',
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running.. ${PORT}`);
+});
+
+// close connection from prisma to database
+process.on('SIGINT', async () => {
+  await disconnectDB();
+  console.log('Disconnected from database. Server stopped.');
+  process.exit(0);
+});
+
+//http://localhost:3000
